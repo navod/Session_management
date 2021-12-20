@@ -1,3 +1,4 @@
+import {useNavigation} from '@react-navigation/native';
 import React, {useEffect, useState} from 'react';
 import {
   View,
@@ -8,39 +9,18 @@ import {
   ActivityIndicator,
   FlatList,
 } from 'react-native';
-import {useDispatch} from 'react-redux';
+import {connect} from 'react-redux';
 import colors from '../constants/colors';
-import {logoutUser} from '../redux/actions';
+import {onGetUsers, onLogoutUser} from '../redux/actions';
 
-export default function Dashboard({navigation}) {
-  const dispatch = useDispatch();
+const Dashboard = props => {
+  const {users} = props;
+  const navigation = useNavigation();
 
-  const [users, setUsers] = useState(null);
   useEffect(() => {
-    getUsers();
+    props.getUser();
   }, []);
 
-  const getUsers = () => {
-    const list = [];
-    const abortCont = new AbortController();
-    setTimeout(() => {
-      fetch('https://reqres.in/api/users?page=2', {signal: abortCont.signal})
-        .then(res => {
-          return res.json();
-        })
-        .then(data => {
-          setUsers(data.data);
-        })
-        .catch(err => {
-          if (err.name === 'AbortError') {
-            console.log('fetch aborted');
-          } else {
-            console.log(err.message);
-          }
-        });
-    }, 1000);
-    return () => abortCont.abort();
-  };
   const renderItem = ({item}) => {
     return (
       <View style={{paddingHorizontal: 20}}>
@@ -64,8 +44,8 @@ export default function Dashboard({navigation}) {
         <TouchableOpacity
           style={styles.logoutBtn}
           onPress={() => {
+            props.logout();
             navigation.navigate('Login');
-            dispatch(logoutUser(null));
           }}>
           <Image
             style={{width: '100%', height: '100%', resizeMode: 'contain'}}
@@ -83,7 +63,22 @@ export default function Dashboard({navigation}) {
       </View>
     );
   }
-}
+};
+
+const mapStateToProps = state => {
+  return {
+    users: state.userReducer.users,
+  };
+};
+
+const mapDispatchToState = dispatch => {
+  return {
+    getUser: () => dispatch(onGetUsers()),
+    logout: () => dispatch(onLogoutUser()),
+  };
+};
+
+export default connect(mapStateToProps, mapDispatchToState)(Dashboard);
 
 const styles = StyleSheet.create({
   logoutBtn: {

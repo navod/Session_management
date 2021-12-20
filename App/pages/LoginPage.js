@@ -15,14 +15,14 @@ import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import CheckBox from '@react-native-community/checkbox';
 import LinearGradient from 'react-native-linear-gradient';
-import {useDispatch} from 'react-redux';
-import {loginUser} from '../redux/actions';
+import {connect} from 'react-redux';
+import {onLoginUser} from '../redux/actions';
 import {KeyBoardSpacer} from '../components/KeyBoardSpacer';
+import {useNavigation} from '@react-navigation/native';
 
-export default function Login({navigation}) {
+const Login = props => {
+  const navigation = useNavigation();
   const [toggleCheckBox, setToggleCheckBox] = useState(false);
-  const [isSave, setIsSave] = useState(false);
-  const dispatch = useDispatch();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isPwOpen, setPwIsOpen] = useState(true);
@@ -32,37 +32,7 @@ export default function Login({navigation}) {
     if (email === '' && password === '') {
       alert('Enter email and password');
     } else {
-      setIsSave(true);
-      fetch('https://reqres.in/api/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: email,
-          password: password,
-        }),
-      })
-        .then(e => {
-          return e.json();
-        })
-        .then(e => {
-          if (e.error) {
-            setIsSave(false);
-            alert(e.error);
-          } else {
-            setIsSave(false);
-            if (toggleCheckBox) {
-              dispatch(loginUser(e.token));
-            }
-            navigation.navigate('Dashboard');
-          }
-          console.log(e);
-        })
-        .catch(err => {
-          setIsSave(false);
-          alert('Invalid user name or password');
-        });
+      props.onLogin(email, password, navigation, toggleCheckBox);
     }
   };
 
@@ -139,7 +109,7 @@ export default function Login({navigation}) {
             </Text>
           </View>
 
-          {isSave ? (
+          {props.isLoading ? (
             <ActivityIndicator size="large" color={colors.primary} />
           ) : (
             <TouchableOpacity
@@ -178,7 +148,21 @@ export default function Login({navigation}) {
       </ScrollView>
     </View>
   );
-}
+};
+
+const mapToStateProps = state => {
+  return {
+    isLoading: state.userReducer.isLoading,
+  };
+};
+const mapToDispatchToProps = dispatch => {
+  return {
+    onLogin: (email, password, navigation, toggleCheckBox) =>
+      dispatch(onLoginUser(email, password, navigation, toggleCheckBox)),
+  };
+};
+
+export default connect(mapToStateProps, mapToDispatchToProps)(Login);
 
 const screen = Dimensions.get('screen');
 const styles = StyleSheet.create({

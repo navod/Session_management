@@ -5,9 +5,8 @@ import {View, ActivityIndicator} from 'react-native';
 import colors from '../constants/colors';
 import Dashboard from '../pages/Dashboard';
 import Login from '../pages/LoginPage';
-
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import {useSelector, useDispatch} from 'react-redux';
+import {connect} from 'react-redux';
+import {onRegisterUser} from '../redux/actions';
 
 const StackNavigator = createStackNavigator();
 
@@ -69,20 +68,12 @@ const DashboardNavigator = () => (
   </ModalStack.Navigator>
 );
 
-export default function Navigation() {
-  const {isLoading} = useSelector(state => state.userReducer);
-  const dispatch = useDispatch();
-  const [userToken, setUserToken] = useState(null);
+const Navigation = props => {
+  const {isLoading, userToken} = props;
+  console.log(props);
+
   useEffect(() => {
-    setTimeout(async () => {
-      try {
-        let user = await AsyncStorage.getItem('userToken');
-        setUserToken(user);
-      } catch (e) {
-        console.log(e);
-      }
-      dispatch({type: 'REGISTER', token: userToken});
-    }, 2000);
+    props.tryToLogin();
   }, []);
 
   if (isLoading) {
@@ -98,9 +89,23 @@ export default function Navigation() {
       </View>
     );
   }
+
   return (
     <NavigationContainer>
       {userToken !== null ? <DashboardNavigator /> : <LoginNavigator />}
     </NavigationContainer>
   );
-}
+};
+const mapStateToProps = state => {
+  return {
+    isLoading: state.userReducer.isLoading,
+    userToken: state.userReducer.userToken,
+  };
+};
+const mapDispatchToProps = dispatch => {
+  return {
+    tryToLogin: () => dispatch(onRegisterUser()),
+  };
+};
+
+export default connect(mapStateToProps, mapDispatchToProps)(Navigation);
